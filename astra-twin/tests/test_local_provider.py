@@ -42,6 +42,7 @@ def test_ollama_agent_uses_chat_completions_and_persists(tmp_path: Path):
     agent = AstraTwinAgent(settings, memory, client=client)
     assert agent.ask("Olá", session_id="local") == "Resposta local"
     assert client.chat.completions.calls[0]["model"] == "qwen3:4b"
+    assert client.chat.completions.calls[0]["extra_body"] == {"think": False}
     assert memory.recent("local") == [
         {"role": "user", "content": "Olá"},
         {"role": "assistant", "content": "Resposta local"},

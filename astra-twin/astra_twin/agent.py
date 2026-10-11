@@ -51,7 +51,8 @@ class AstraTwinAgent:
                 response = self.client.chat.completions.create(
                     model=self.settings.model,
                     messages=messages,
-                    max_tokens=4000,
+                    max_tokens=1200,
+                    extra_body={"think": False},
                 )
                 answer = (response.choices[0].message.content or "").strip()
             else:
