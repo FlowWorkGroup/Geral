@@ -1,0 +1,38 @@
+name: Astra Twin tests
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/astra-twin-mvp"
+    paths:
+      - "astra-twin/**"
+      - ".github/workflows/astra-twin-tests.yml"
+  pull_request:
+    paths:
+      - "astra-twin/**"
+      - ".github/workflows/astra-twin-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: astra-twin
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: astra-twin/pyproject.toml
+      - name: Install package and test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest
