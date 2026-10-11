@@ -12,7 +12,7 @@ class FakeChatCompletions:
 
     def create(self, **kwargs):
         self.calls.append(kwargs)
-        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Resposta local"))])
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Raciocínio interno.\n</think>\nResposta local"))])
 
 
 class FakeLocalClient:

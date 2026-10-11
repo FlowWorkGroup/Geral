@@ -55,6 +55,10 @@ class AstraTwinAgent:
                     extra_body={"think": False},
                 )
                 answer = (response.choices[0].message.content or "").strip()
+                # Ollama 0.40.x may return Qwen3 reasoning and the final answer
+                # in one content string, with only the closing marker preserved.
+                if "</think>" in answer:
+                    answer = answer.rsplit("</think>", 1)[-1].strip()
             else:
                 transcript = "\n\n".join(
                     f"{'Utilizador' if item['role'] == 'user' else 'Assistente'}: {item['content']}"
