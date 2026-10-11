@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
   "openai>=1.68.0",
   "python-dotenv>=1.0.1",
+  "Flask>=3.1.0,<4.0",
 ]
 
 [project.optional-dependencies]
@@ -18,6 +19,7 @@ dev = ["pytest>=8.0.0"]
 
 [project.scripts]
 astra-twin = "astra_twin.cli:main"
+astra-twin-web = "astra_twin.web:main"
 
 [tool.setuptools.packages.find]
 include = ["astra_twin*"]

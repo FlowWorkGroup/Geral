@@ -51,6 +51,17 @@ pytest
 
 Sem pergunta na linha de comandos, o programa entra em modo interativo. A memória é guardada em `~/.astra-twin/memory.sqlite3` por predefinição.
 
+## Interface web privada de teste
+
+A interface usa uma palavra-passe forte, sessão assinada, proteção CSRF, limitação de tentativas de autenticação e cabeçalhos de segurança. Por defeito, o servidor escuta **apenas em `127.0.0.1:8765`**. Não alteres `ASTRA_TWIN_WEB_HOST` para `0.0.0.0` e não publiques a porta 8765 nem a porta 11434 na Internet.
+
+1. Define `ASTRA_TWIN_WEB_PASSWORD` com pelo menos 16 caracteres aleatórios e `ASTRA_TWIN_WEB_SECRET` com pelo menos 32 caracteres aleatórios no `.env` local. Nunca coloques estes valores no Git.
+2. Instala as dependências atualizadas com `python -m pip install -e ".[dev]"`.
+3. Inicia com `astra-twin-web` e testa no próprio Mac em `http://127.0.0.1:8765`.
+4. Para aceder a partir do iPhone, usa uma rede privada como Tailscale e expõe **apenas a interface web autenticada** através de Tailscale Serve. O iPhone e o Mac têm de estar autenticados no mesmo tailnet. Não uses um túnel público nem exponhas diretamente a API do Ollama.
+
+Se o Tailscale não estiver autenticado no Mac, o acesso pelo iPhone ainda não está configurado; não contornes o login de rede. A interface não fornece acesso ao sistema operativo nem ferramentas para executar comandos.
+
 ## Arquitetura
 
 - `config.py`: fornecedor, modelo, URL e limites validados por variáveis de ambiente.
