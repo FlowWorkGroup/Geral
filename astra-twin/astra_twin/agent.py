@@ -1,4 +1,4 @@
-"""Controlador do agente: limites explícitos e chamada ao modelo."""
+"""Controlador do agente com fornecedores OpenAI e Ollama local."""
 
 from __future__ import annotations
 
@@ -21,17 +21,17 @@ class AgentError(RuntimeError):
 
 
 class AstraTwinAgent:
-    def __init__(
-        self,
-        settings: Settings,
-        memory: MemoryStore,
-        client: OpenAI | None = None,
-    ):
+    def __init__(self, settings: Settings, memory: MemoryStore, client: OpenAI | None = None):
         self.settings = settings
         self.memory = memory
-        if client is None and not settings.api_key:
+        if settings.provider == "openai" and not settings.api_key and client is None:
             raise AgentError("Falta configurar OPENAI_API_KEY no ficheiro .env.")
-        self.client = client or OpenAI(api_key=settings.api_key)
+        if settings.provider == "ollama" and not settings.base_url:
+            raise AgentError("Falta configurar ASTRA_TWIN_BASE_URL para o Ollama local.")
+        self.client = client or OpenAI(
+            api_key=settings.api_key if settings.provider == "openai" else "ollama-local",
+            base_url=settings.base_url or None,
+        )
 
     def ask(self, prompt: str, session_id: str = "default") -> str:
         prompt = prompt.strip()
@@ -43,31 +43,39 @@ class AstraTwinAgent:
             )
 
         history = self.memory.recent(session_id, self.settings.max_history)
-        transcript = "\n\n".join(
-            f"{'Utilizador' if item['role'] == 'user' else 'Assistente'}: {item['content']}"
-            for item in history
-        )
-        input_text = (
-            f"Histórico recente da sessão (pode estar incompleto):\n{transcript}\n\n"
-            f"Novo pedido do utilizador:\n{prompt}"
-            if transcript
-            else prompt
-        )
-
         try:
-            response = self.client.responses.create(
-                model=self.settings.model,
-                reasoning={"effort": self.settings.reasoning_effort},
-                instructions=SYSTEM_INSTRUCTIONS,
-                input=input_text,
-                max_output_tokens=4000,
-            )
-            answer = (response.output_text or "").strip()
+            if self.settings.provider == "ollama":
+                messages = [{"role": "system", "content": SYSTEM_INSTRUCTIONS}]
+                messages.extend(history)
+                messages.append({"role": "user", "content": prompt})
+                response = self.client.chat.completions.create(
+                    model=self.settings.model,
+                    messages=messages,
+                    max_tokens=4000,
+                )
+                answer = (response.choices[0].message.content or "").strip()
+            else:
+                transcript = "\n\n".join(
+                    f"{'Utilizador' if item['role'] == 'user' else 'Assistente'}: {item['content']}"
+                    for item in history
+                )
+                input_text = (
+                    f"Histórico recente da sessão (pode estar incompleto):\n{transcript}\n\n"
+                    f"Novo pedido do utilizador:\n{prompt}"
+                    if transcript else prompt
+                )
+                response = self.client.responses.create(
+                    model=self.settings.model,
+                    reasoning={"effort": self.settings.reasoning_effort},
+                    instructions=SYSTEM_INSTRUCTIONS,
+                    input=input_text,
+                    max_output_tokens=4000,
+                )
+                answer = (response.output_text or "").strip()
         except Exception as exc:
-            # Não incluir segredos nem conteúdo integral da exceção na mensagem pública.
             raise AgentError(
                 f"A chamada ao modelo falhou ({type(exc).__name__}). "
-                "Confirma a chave, o acesso ao modelo, a ligação e os limites da API."
+                "Confirma o fornecedor, o serviço local, o modelo e a ligação."
             ) from exc
 
         if not answer:

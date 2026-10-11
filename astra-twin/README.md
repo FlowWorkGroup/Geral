@@ -1,69 +1,64 @@
 # Astra Twin — MVP executável
 
-Projeto inicial de uma IA própria inspirada na arquitetura descrita em `Estudo-tecnico-GPT-6-Astra.md`. Não é uma cópia dos pesos nem uma garantia de equivalência ao GPT-6 Astra: reproduz a arquitetura envolvente — controlador, memória persistente, limites e verificação básica — usando um modelo acessível pela API.
+Agente experimental com controlador, memória persistente SQLite e fornecedor de modelos configurável. Pode usar a API local do Ollama ou a API da OpenAI. Não é uma cópia dos pesos nem uma garantia de equivalência ao GPT-6 Astra.
 
-## Requisitos
+## Opção A — modelo local com Ollama (sem chave de API)
 
-- Python 3.11+
-- Uma chave API com acesso ao modelo configurado
-- Acesso à Internet para chamadas à API
+1. Instala o Ollama para macOS: https://ollama.com/download
+2. Inicia o Ollama e confirma que a API local responde em `http://localhost:11434`.
+3. Descarrega o modelo recomendado para começar num computador com 8 GB de memória:
 
-## Instalação
+   ```bash
+   ollama pull qwen3:4b
+   ```
+
+4. Instala o projeto:
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   python -m pip install -e ".[dev]"
+   cp .env.example .env
+   ```
+
+5. No `.env`, confirma estas opções:
+
+   ```dotenv
+   ASTRA_TWIN_PROVIDER=ollama
+   ASTRA_TWIN_MODEL=qwen3:4b
+   ASTRA_TWIN_BASE_URL=http://localhost:11434/v1
+   ```
+
+6. Executa uma pergunta de teste:
+
+   ```bash
+   astra-twin "Responde em português europeu: explica o que é uma API local."
+   ```
+
+A API do Ollama é local; a inferência não requer uma chave externa. A primeira descarga do modelo precisa de Internet. Depois de descarregado, o modelo pode gerar respostas sem Internet, desde que o serviço local esteja a correr.
+
+## Opção B — API OpenAI
+
+No `.env`, define `ASTRA_TWIN_PROVIDER=openai` e preenche `OPENAI_API_KEY` com uma chave válida. O modelo é definido em `ASTRA_TWIN_MODEL`; confirma o identificador e o acesso na tua conta.
+
+## Comandos
 
 ```bash
-python -m venv .venv
-# macOS/Linux:
-source .venv/bin/activate
-# Windows PowerShell:
-# .venv\Scripts\Activate.ps1
-
-python -m pip install -e ".[dev]"
-cp .env.example .env
-```
-
-Edite `.env` e defina `OPENAI_API_KEY`. Nunca coloque a chave no Git.
-
-## Executar
-
-```bash
-astra-twin
-```
-
-Ou passe uma pergunta diretamente:
-
-```bash
-astra-twin "Explica como funciona uma fila de mensagens"
-```
-
-## Testes
-
-```bash
+astra-twin "A tua pergunta"
+astra-twin --session projeto "Continua a conversa da sessão projeto"
 pytest
 ```
 
-Os testes não chamam a API e não exigem uma chave.
+Sem pergunta na linha de comandos, o programa entra em modo interativo. A memória é guardada em `~/.astra-twin/memory.sqlite3` por predefinição.
 
 ## Arquitetura
 
-- `config.py`: configuração por variáveis de ambiente.
-- `memory.py`: memória de conversação SQLite, persistente e local.
-- `agent.py`: controlador limitado, chamada ao modelo e validação da resposta.
+- `config.py`: fornecedor, modelo, URL e limites validados por variáveis de ambiente.
+- `memory.py`: memória de conversação SQLite persistente.
+- `agent.py`: controlador e integração com OpenAI Responses ou Ollama Chat Completions.
 - `cli.py`: interface de terminal.
-- `tests/`: testes offline.
+- `tests/`: testes offline; não exigem uma chave nem um modelo descarregado.
 
-## Limites de segurança atuais
+## Limites de segurança
 
-Esta versão é uma prova de conceito, não um agente autónomo de produção. Não executa comandos, não altera ficheiros, não navega na rede por iniciativa própria e não tem ferramentas externas. A memória local pode conter dados pessoais; protege o ficheiro SQLite e elimina-o se já não for necessário. Para produção, acrescentar autenticação, gestão de segredos, limites de custo medidos, auditoria, testes de prompt injection e revisão humana para ações com impacto.
-
-## Configuração
-
-| Variável | Predefinição | Descrição |
-|---|---|---|
-| `OPENAI_API_KEY` | — | Chave da API |
-| `ASTRA_TWIN_MODEL` | `gpt-6-astra` | Identificador do modelo |
-| `ASTRA_TWIN_REASONING` | `high` | `low`, `medium`, `high`, `xhigh` ou `max` |
-| `ASTRA_TWIN_DB` | `~/.astra-twin/memory.sqlite3` | Caminho da base de dados |
-| `ASTRA_TWIN_MAX_HISTORY` | `12` | Número máximo de mensagens recentes recuperadas |
-| `ASTRA_TWIN_MAX_INPUT_CHARS` | `12000` | Limite de caracteres por pedido |
-
-O identificador e os limites do modelo devem ser confirmados na documentação atual da API e na conta utilizada. O custo real depende do uso faturável e do acesso contratado.
+Esta versão é uma prova de conceito, não um agente autónomo de produção. Não executa comandos, não altera ficheiros, não navega na rede por iniciativa própria e não tem ferramentas externas. A memória local pode conter dados pessoais; protege o ficheiro SQLite. Para produção, acrescentar autenticação, auditoria, limites de uso, testes de prompt injection e revisão humana para ações com impacto.

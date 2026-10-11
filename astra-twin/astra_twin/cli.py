@@ -20,17 +20,16 @@ def main() -> None:
 
     try:
         settings = Settings.from_env()
-        if not settings.api_key:
+        if settings.provider == "openai" and not settings.api_key:
             print("Erro: configura OPENAI_API_KEY no ficheiro .env.", file=sys.stderr)
             raise SystemExit(2)
         session_id = str(uuid.uuid4()) if args.new_session else args.session
         agent = AstraTwinAgent(settings, MemoryStore(settings.database_path))
-
         if args.prompt:
             print(agent.ask(args.prompt, session_id=session_id))
             return
 
-        print(f"Astra Twin | sessão: {session_id}")
+        print(f"Astra Twin | fornecedor: {settings.provider} | modelo: {settings.model} | sessão: {session_id}")
         print("Escreve 'sair' para terminar. A memória desta sessão fica guardada localmente.")
         while True:
             try:
