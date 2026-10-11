@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astra-twin"
+version = "0.1.0"
+description = "MVP de agente de IA com controlador, memória persistente e limites explícitos."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "openai>=1.68.0",
+  "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+astra-twin = "astra_twin.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["astra_twin*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
