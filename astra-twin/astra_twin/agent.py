@@ -29,6 +29,8 @@ class AstraTwinAgent:
     ):
         self.settings = settings
         self.memory = memory
+        if client is None and not settings.api_key:
+            raise AgentError("Falta configurar OPENAI_API_KEY no ficheiro .env.")
         self.client = client or OpenAI(api_key=settings.api_key)
 
     def ask(self, prompt: str, session_id: str = "default") -> str:
@@ -39,8 +41,6 @@ class AstraTwinAgent:
             raise ValueError(
                 f"O pedido excede o limite de {self.settings.max_input_chars} caracteres."
             )
-        if not self.settings.api_key and self.client is None:
-            raise AgentError("Falta configurar OPENAI_API_KEY no ficheiro .env.")
 
         history = self.memory.recent(session_id, self.settings.max_history)
         transcript = "\n\n".join(
